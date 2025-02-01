@@ -1,0 +1,33 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Your Whiteboards</h1>
+  
+  <div class="flex justify-center mb-8">
+    <%= link_to 'Create New Whiteboard', new_whiteboard_path, 
+        class: 'bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-105' %>
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% @whiteboards.each do |whiteboard| %>
+      <div class="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-xl transition duration-300 ease-in-out">
+        <div class="p-6">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4"><%= whiteboard.name %></h2>
+          
+          <% if whiteboard.description.present? %>
+            <p class="text-gray-600 mb-4 truncate"><%= whiteboard.description %></p>
+          <% end %>
+          
+          <div class="flex justify-between items-center">
+            <%= link_to 'Open Whiteboard', whiteboard_path(whiteboard), 
+                class: 'bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-105' %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  
+  <% if @whiteboards.empty? %>
+    <div class="text-center py-12">
+      <p class="text-gray-600 text-lg">You haven't created any whiteboards yet.</p>
+    </div>
+  <% end %>
+</div>

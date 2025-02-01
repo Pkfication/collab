@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent default touch behaviors */
+canvas {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Color picker hover effect */
+.color-picker {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.color-picker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+/* Responsive container */
+.whiteboard-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Ensure full width on mobile */
+@media (max-width: 768px) {
+  .whiteboard-container {
+    width: 95%;
+    padding: 0 10px;
+  }
+}

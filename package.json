@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo-rails": "^8.0.12",
+    "@rails/actioncable": "^8.0.100"
+  }
+}

@@ -3,9 +3,36 @@ import { createConsumer } from "@rails/actioncable"
 
 export default class extends Controller {
   static targets = [ "canvas" ]
+
+  // Color generation utility
+  generateUniqueColor() {
+    // Use a combination of timestamp and random values to create a unique color
+    const timestamp = Date.now()
+    const randomPart = Math.floor(Math.random() * 0xFFFFFF)
+    
+    // Mix timestamp and random values to create a unique color
+    const colorValue = (timestamp ^ randomPart) & 0xFFFFFF
+    
+    // Convert to hex color
+    const hexColor = `#${colorValue.toString(16).padStart(6, '0')}`
+    
+    console.log(`[Whiteboard] Generated unique color: ${hexColor}`)
+    return hexColor
+  }
+
+  // Debug method to log all method calls
+  debug(methodName, ...args) {
+    console.group(`[Whiteboard] ${methodName}`)
+    console.trace() // Print call stack
+    console.log("Arguments:", args)
+    console.groupEnd()
+  }
   
   connect() {
     console.log("[Whiteboard] Controller connecting...")
+    
+    // Generate a unique color for this client
+    this.drawColor = this.generateUniqueColor()
     
     // Force enable debug mode
     this.debugMode = true
@@ -82,8 +109,8 @@ export default class extends Controller {
   setupCanvasContext() {
     console.log("[Whiteboard] Setting up canvas context")
     
-    // Explicit context configuration
-    this.ctx.strokeStyle = 'black'
+    // Use the generated unique color
+    this.ctx.strokeStyle = this.drawColor
     this.ctx.lineWidth = 3
     this.ctx.lineCap = 'round'
     this.ctx.lineJoin = 'round'
@@ -208,6 +235,9 @@ export default class extends Controller {
     
     console.log(`[Whiteboard] Drawing start coordinates: x=${coords.x}, y=${coords.y}`)
     
+    // Ensure we use the unique color
+    this.ctx.strokeStyle = this.drawColor
+    
     this.ctx.beginPath()
     this.ctx.moveTo(coords.x, coords.y)
     
@@ -228,6 +258,8 @@ export default class extends Controller {
     
     console.log(`[Whiteboard] Drawing move coordinates: x=${coords.x}, y=${coords.y}`)
     
+    // Ensure we use the unique color for drawing
+    this.ctx.strokeStyle = this.drawColor
     this.ctx.lineTo(coords.x, coords.y)
     this.ctx.stroke()
     
@@ -235,7 +267,8 @@ export default class extends Controller {
       x1: this.lastX,
       y1: this.lastY,
       x2: coords.x,
-      y2: coords.y
+      y2: coords.y,
+      color: this.drawColor // Include color in broadcast
     })
     
     this.lastX = coords.x
@@ -270,33 +303,74 @@ export default class extends Controller {
   }
   
   drawRemote(data) {
-    const { x1, y1, x2, y2 } = data.drawing_data
+    const { x1, y1, x2, y2, color } = data.drawing_data
     
     this.ctx.beginPath()
+    this.ctx.strokeStyle = color || 'black' // Fallback to black if no color
     this.ctx.moveTo(x1, y1)
     this.ctx.lineTo(x2, y2)
     this.ctx.stroke()
   }
   
-  clearCanvas() {
-    console.log("[Whiteboard] Clearing canvas")
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+  clearCanvas(event) {
+    // Add a debugger to pause execution and inspect
+    debugger;
     
-    const whiteboardId = this.canvas.getAttribute('data-whiteboard-id')
+    console.log("[Whiteboard] Attempting to clear canvas")
+    console.warn("[Whiteboard] Clear Canvas Method Called")
     
-    if (this.subscription) {
-      this.subscription.send({
-        whiteboard_id: whiteboardId,
-        drawing_data: { action: 'clear' }
-      })
-    } else {
-      console.error("[Whiteboard] WebSocket subscription not established")
+    try {
+      // Log all relevant properties
+      console.log("[Whiteboard] Canvas:", this.canvas)
+      console.log("[Whiteboard] Context:", this.ctx)
+      console.log("[Whiteboard] Canvas Width:", this.canvas?.width)
+      console.log("[Whiteboard] Canvas Height:", this.canvas?.height)
+      
+      // Ensure canvas and context exist
+      if (!this.canvas || !this.ctx) {
+        console.error("[Whiteboard] Canvas or context not initialized")
+        alert("[Whiteboard] Canvas not initialized") // Add an alert for visibility
+        return
+      }
+      
+      // Clear the entire canvas
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+      console.log("[Whiteboard] Canvas cleared locally")
+      
+      // Get whiteboard ID
+      const whiteboardId = this.canvas.getAttribute('data-whiteboard-id')
+      console.log(`[Whiteboard] Whiteboard ID for clear: ${whiteboardId}`)
+      
+      // Broadcast canvas clear
+      if (this.subscription) {
+        console.log("[Whiteboard] Sending clear message via WebSocket")
+        this.subscription.send({
+          whiteboard_id: whiteboardId,
+          drawing_data: { action: 'clear' }
+        })
+      } else {
+        console.error("[Whiteboard] WebSocket subscription not established")
+        alert("[Whiteboard] WebSocket not established") // Add an alert for visibility
+      }
+    } catch (error) {
+      console.error("[Whiteboard] Error clearing canvas:", error)
+      alert(`[Whiteboard] Error: ${error.message}`) // Add an alert for visibility
     }
   }
   
   clearCanvasRemote() {
     console.log("[Whiteboard] Clearing canvas remotely")
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    
+    try {
+      if (!this.canvas || !this.ctx) {
+        console.error("[Whiteboard] Canvas or context not initialized for remote clear")
+        return
+      }
+      
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    } catch (error) {
+      console.error("[Whiteboard] Error clearing canvas remotely:", error)
+    }
   }
   
   setupWebSocket(whiteboardId) {
